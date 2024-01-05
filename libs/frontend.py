@@ -30,8 +30,9 @@ def visual_1(G,k):
         degs_in_df = pd.DataFrame(degs_in.items(), columns = ['ID', 'In Degree'])
         degs_out_df = pd.DataFrame(degs_out.items(), columns = ['ID', 'Out Degree'])
         degs_in_out_df = degs_in_df.merge(degs_out_df, how = 'inner', on = 'ID')
-        hubs_df = pd.DataFrame(hubs, columns = ['ID', 'Degree'])
+        hubs_df = pd.DataFrame(hubs, columns = ['ID', 'Title','Degree'])
         hubs_info = degs_in_out_df.merge(hubs_df, how = 'inner', on = 'ID').sort_values('Degree', ascending = False)
+        hubs_info = hubs_info.reindex(['ID', 'Title','Degree','In Degree','Out Degree'], axis=1)
         
     # Case 2: weighted and undirected graph - "in" and "out" degree are included in the analysis
     else:
@@ -39,7 +40,7 @@ def visual_1(G,k):
         # Apply functionality 1 to retrieve needed data
         n, e, dens, degs, avg_deg, perc_95, hubs, is_sparse = funct_1(G, G_name)
         # Store hubs info in pandas dataframe
-        hubs_info = pd.DataFrame(hubs, columns = ['ID', 'Degree']).sort_values('Degree', ascending = False)
+        hubs_info = pd.DataFrame(hubs, columns = ['ID', 'Name', 'Degree']).sort_values('Degree', ascending = False)
     
     # Store graph info in pandas dataframe
     colnames = ['Number of Nodes', 'Number of Edges', 'Density', 'Average Degree', 'Is Sparse']
@@ -56,7 +57,7 @@ def visual_1(G,k):
      'props': 'caption-side: top; font-size: 24px; text-align: center; color: black; font-weight: bold'
      },{
      'selector': 'th',
-     'props': 'font-size: 14px'
+     'props': 'font-size: 14px; text-align: center'
      },{
      'selector': 'td',
      'props': 'font-size: 14px'
@@ -71,7 +72,6 @@ def visual_1(G,k):
     )\
     .hide(axis = 'index')
     
-    # WIP - output.csv is needed to add author and paper names as attributes to nodes (part 1)
     hubs_info_stl = hubs_info.style\
     .set_caption(G_name.capitalize() + ' Graph Hubs')\
     .set_properties(**{'text-align':'center'})\
@@ -80,7 +80,7 @@ def visual_1(G,k):
      'props': 'caption-side: top; font-size: 24px; text-align: center; color: black; font-weight: bold'
      },{
      'selector': 'th',
-     'props': 'font-size: 14px'
+     'props': 'font-size: 14px; text-align: center'
      },{
      'selector': 'td',
      'props': 'font-size: 14px'
@@ -109,15 +109,73 @@ def visual_1(G,k):
         axes[1].set_ylabel('Frequency')
         axes[1].set_axisbelow(True)
         axes[1].grid(zorder = 0)
-    # Case 2: weighted and undirected graph, plot the top k authors by degree WIP - replace ids with names
+    # Case 2: weighted and undirected graph, plot the top k authors by degree 
     else:
         fig, ax = plt.subplots(figsize = (12,6))
-        ax.bar(hubs_info.ID[:k], hubs_info.Degree[:k], color = 'royalblue', edgecolor = 'black')
+        ax.bar(hubs_info.Name[:k], hubs_info.Degree[:k], color = 'royalblue', edgecolor = 'black')
         ax.set_title('Number of collaborations\nTop '+str(k)+' authors')
         ax.set_xlabel('Author')
         ax.set_ylabel('Number of collaborations')
-        ax.set_xticks(range(k), hubs_info.ID[:k], rotation = -45, ha='left', rotation_mode='anchor')
+        ax.set_xticks(range(k), hubs_info.Name[:k], rotation = -45, ha='left', rotation_mode='anchor')
         ax.set_axisbelow(True)
         ax.grid(zorder = 0)
         
+    return None
+
+### FUNCTIONALITY 2 VISUALIZATION ### - WIP
+def visual_2(G,v):
+    '''
+    Prints one table that displays four centrality measures calculated for an input node.
+    The centrality measures are:
+    - Betweenness centrality
+    - PageRank centrality
+    - Closeness centrality
+    - Degree centrality
+    
+    input
+    G: the input graph
+    v: the input node (ID)
+    
+    output
+    None
+    ''' 
+    # Handle both citation and collaboration graphs
+    if nx.is_directed(G):
+        G_name = 'citation'
+    else:
+        G_name = 'collaboration'
+    
+    # Calculate centrality measures
+    bet, pr, cc, dc = funct_2(G,v,G_name)
+    
+    # Create a dataframe to store the calculated measures
+    colnames = ['Betweenness Centrality', 'PageRank Centrality', 'Closeness Centrality', 'Degree Centrality']
+    node_info = pd.DataFrame(np.array([[bet, pr, cc, dc]]), columns = colnames)
+    
+    # Change dataframe style to display prettier tables
+    node_info_stl = node_info.style\
+    .set_caption(str(G.nodes[v]) + ' Centrality Measures')\
+    .set_properties(**{'text-align':'center'})\
+    .set_table_styles([{
+     'selector': 'caption',
+     'props': 'caption-side: top; font-size: 24px; text-align: center; color: black; font-weight: bold'
+     },{
+     'selector': 'th',
+     'props': 'font-size: 14px; text-align: center'
+     },{
+     'selector': 'td',
+     'props': 'font-size: 14px'
+     }], overwrite = False)\
+    .format(
+      {
+        'Betweenness Centrality':'{:.3f}',
+        'PageRank Centrality':'{:.3f}',
+        'Closeness Centrality':'{:.3f}',
+        'Degree Centrality':'{:.3f}'
+      }
+    )\
+    .hide(axis = 'index')
+    
+    display(node_info_stl)
+    
     return None
