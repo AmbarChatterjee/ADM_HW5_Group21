@@ -122,7 +122,49 @@ def visual_1(G,k):
         
     return None
 
-### FUNCTIONALITY 2 VISUALIZATION ### - WIP
+### NODE ID FINDER VISUALIZATION###
+def visual_id_finder(G,input_str):
+    '''
+    Prints a node ID given the author's name of the paper's title
+    
+    input
+    G: input graph
+    input_str: input author's name or article's title
+    
+    output
+    None
+    '''
+    # Use the ID finder
+    ids = id_finder(G,input_str)
+    
+    # Handle cases in which there is no node with the typed name/title
+    if ids == []:
+        print('There is no such node')
+        return None
+    
+    ids_df = pd.DataFrame(np.array([ids]), columns = ['ID'])
+    
+    # Change dataframes style to display prettier table
+    ids_df_stl = ids_df.style\
+    .set_caption('Node(s) ID(s)')\
+    .set_properties(**{'text-align':'center'})\
+    .set_table_styles([{
+     'selector': 'caption',
+     'props': 'caption-side: top; font-size: 24px; text-align: center; color: black; font-weight: bold'
+     },{
+     'selector': 'th',
+     'props': 'font-size: 14px; text-align: center'
+     },{
+     'selector': 'td',
+     'props': 'font-size: 14px'
+     }], overwrite = False)\
+    .hide(axis = 'index')
+    
+    display(ids_df_stl)
+    
+    return None
+
+### FUNCTIONALITY 2 VISUALIZATION ### - WIP ADD COMMENTS
 def visual_2(G,v):
     '''
     Prints one table that displays four centrality measures calculated for an input node.
@@ -142,19 +184,22 @@ def visual_2(G,v):
     # Handle both citation and collaboration graphs
     if nx.is_directed(G):
         G_name = 'citation'
+        # Calculate centrality measures - Apply Functionality 2
+        bet, pr, cc, dc = funct_2(G,str(v),G_name)
+        # Create a dataframe to store the calculated measures
+        colnames = ['Betweenness Centrality', 'PageRank Centrality', 'Closeness Centrality', 'Degree Centrality (In)', 'Degree Centrality (Out)']
+        node_info = pd.DataFrame(np.array([[bet, pr, cc, dc[0], dc[1]]]), columns = colnames)
     else:
         G_name = 'collaboration'
+        # Calculate centrality measures
+        bet, pr, cc, dc = funct_2(G,str(v),G_name)
+        # Create a dataframe to store the calculated measures
+        colnames = ['Betweenness Centrality', 'PageRank Centrality', 'Closeness Centrality', 'Degree Centrality']
+        node_info = pd.DataFrame(np.array([[bet, pr, cc, dc]]), columns = colnames)
     
-    # Calculate centrality measures
-    bet, pr, cc, dc = funct_2(G,v,G_name)
-    
-    # Create a dataframe to store the calculated measures
-    colnames = ['Betweenness Centrality', 'PageRank Centrality', 'Closeness Centrality', 'Degree Centrality']
-    node_info = pd.DataFrame(np.array([[bet, pr, cc, dc]]), columns = colnames)
-    
-    # Change dataframe style to display prettier tables
+    # Change dataframe style to display prettier table
     node_info_stl = node_info.style\
-    .set_caption(str(G.nodes[v]) + ' Centrality Measures')\
+    .set_caption('Node ' + str(v) + ' Centrality Measures')\
     .set_properties(**{'text-align':'center'})\
     .set_table_styles([{
      'selector': 'caption',
@@ -166,16 +211,103 @@ def visual_2(G,v):
      'selector': 'td',
      'props': 'font-size: 14px'
      }], overwrite = False)\
-    .format(
-      {
-        'Betweenness Centrality':'{:.3f}',
-        'PageRank Centrality':'{:.3f}',
-        'Closeness Centrality':'{:.3f}',
-        'Degree Centrality':'{:.3f}'
-      }
-    )\
+    .format('{:.3f}')\
     .hide(axis = 'index')
     
     display(node_info_stl)
     
     return None
+
+### FUNCTIONALITY 3 VISUALIZATION ### - WIP GRAPH PLOT
+def visual_3(G,a1,a,an,N):
+    '''
+    input
+    G: the graph data
+    a1: starting node
+    a: string that is a sequence of authors  [a2,a3,...,an-1] separated by a blank space
+    an: finish node
+    N: numerosity of top authors by degree to consider
+    
+    output
+    None
+    ''' 
+    # --- Shortest path table ---
+    # Generate a list of nodes from the input string
+    a = a.split(' ')
+    
+    # Calculate the shortest path - Apply Functionality 3
+    path, papers = funct_3(G,a,str(a1),str(an),N)
+    path_from = path[:-1]
+    path_to = path[1:]
+    path_papers = [list(x) for x in zip(path_from, path_to, papers)]
+    
+    # Create a DataFrame to store the path
+    walk_df = pd.DataFrame(np.array(path_papers), columns = ['From (Author ID)', 'To (Author ID)', 'Paper Title'])
+    
+    # Change dataframe style to display prettier table
+    walk_df_stl = walk_df.style\
+    .set_caption('Shortest path from ' + str(a1) + ' to ' + str(an))\
+    .set_properties(**{'text-align':'center'})\
+    .set_table_styles([{
+     'selector': 'caption',
+     'props': 'caption-side: top; font-size: 24px; text-align: center; color: black; font-weight: bold'
+     },{
+     'selector': 'th',
+     'props': 'font-size: 14px; text-align: center'
+     },{
+     'selector': 'td',
+     'props': 'font-size: 14px'
+     }], overwrite = False)\
+    .hide(axis = 'index')
+    
+    display(walk_df_stl)
+    
+    # --- Visualization on graph ---
+    #Compute the subgraph of G induced by the top N nodes by degree
+    degrees = dict(G.degree())
+    sorted_nodes = [k for k, v in sorted(degrees.items(), key=lambda x: x[1], reverse = True)]
+    G_sub = G.subgraph(sorted_nodes[:N])
+    # Compute a list of edges involved in the path
+    path_edges = list(zip(path_from, path_to))
+    # Compute a dictionary where edges in path are keys and papers are values
+    labels = dict(list(zip(path_edges,[*range(1, len(path_edges)+1)])))
+    
+    # Initialize MatPlotLib figure
+    plt.figure(figsize=(12, 8))
+    # Use spring layout
+    pos = nx.spring_layout(G_sub)
+    
+    # Draw nodes and edges not included in path
+    nx.draw_networkx_nodes(G_sub, pos, nodelist=set(G_sub.nodes)-set(path), node_size = 50)
+    nx.draw_networkx_edges(G_sub, pos, edgelist=set(G_sub.edges)-set(path_edges), edge_color='gray', node_size = 50)
+    
+    # Draw nodes and edges included in path
+    nx.draw_networkx_nodes(G_sub, pos, nodelist=path, node_color='r', node_size = 50)
+    nx.draw_networkx_edges(G_sub, pos, edgelist=path_edges, edge_color='r', node_size = 50)
+    
+    # Draw labels
+    nx.draw_networkx_edge_labels(G_sub, pos, edge_labels = labels)
+    
+    # Zoom on the nodes of interest
+    pos_path = {k:pos[str(k)] for k in path}
+    xmin = min(xx for xx,yy in pos_path.values())
+    xmax = max(xx for xx,yy in pos_path.values())
+    xrange = xmax-xmin
+    ymin = min(yy for xx,yy in pos_path.values())
+    ymax = max(yy for xx,yy in pos_path.values())
+    yrange = ymax-ymin
+    plt.axis('off')
+    axis = plt.gca()
+    axis.set_xlim(left = xmin - 0.1*xrange, right = xmax + 0.1*xrange)
+    axis.set_ylim(bottom = ymin - 0.1*yrange, top = ymax + 0.1*yrange)
+    
+    #nx.draw(G, pos, node_size=10, edge_color='gray', with_labels=False)
+    plt.title("Zoomed graph with shortest walk highlighted")
+    plt.tight_layout()
+    plt.show()
+    
+    return None
+    
+    
+    
+    
