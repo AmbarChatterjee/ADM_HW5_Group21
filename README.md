@@ -10,11 +10,11 @@
 This repository contains the solutions for ADM-HW5, where it was requested to deal with graphs. Here's an overview of the contents:
 
 - **main.ipynb:** This notebook includes all the answers to the homework questions.
-- **libs** This folder contains all the functions used in Q2 in two separate files (*backend.py* and *frontend.py*).
-- **CommandLine.sh** This file contains the commands for the Command Line Question (CLQ).
-- **citation_graph.graphml** This file contains the citation graph in *.graphml* format (lightweight), in case the user wants to interact with the widgets.
-- **collaboration_graph.graphml** This file contains the collaboration graph in *.graphml* format (lightweight), in case the user wants to interact with the widgets.
-- **subgraph_collaboration_graph.graphml** This file contains the largest component of the collaboration graph in *.graphml* format (lightweight), in case the user wants to interact with the widgets.
+- **libs:** This folder contains all the functions used in Q2 in two separate files (*backend.py* and *frontend.py*).
+- **CommandLine.sh:** This file contains the commands for the Command Line Question (CLQ).
+- **citation_graph.graphml:** This file contains the citation graph in *.graphml* format (lightweight), in case the user wants to interact with the widgets.
+- **collaboration_graph.graphml:** This file contains the collaboration graph in *.graphml* format (lightweight), in case the user wants to interact with the widgets.
+- **subgraph_collaboration_graph.graphml:** This file contains the largest component of the collaboration graph in *.graphml* format (lightweight), in case the user wants to interact with the widgets.
 
 ## Important notes
 The library IPyWidgets was used for the frontend part (visualizations). Since both github and nbviewer don’t show the widgets outputs, an html version of the notebook is accessible at [this](https://ambarchatterjee.github.io/ADM_HW5_Group21) link (made with GitHub Pages).  
