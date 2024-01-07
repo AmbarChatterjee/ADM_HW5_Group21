@@ -220,8 +220,8 @@ def funct_3(G,a,a1,an,N):
     N: numerosity of top authors by degree to consider
     
     output
-    path: WIP
-    papers: WIP
+    path: list of authors ids from a1 to an
+    papers: list of papers which link the authors [a1,a2,...,an]
     '''
     #Compute the subgraph of G induced by the top N nodes by degree
     degrees = dict(G.degree())
@@ -262,3 +262,135 @@ def funct_3(G,a,a1,an,N):
             papers.extend(pair_papers)
     
     return path,papers
+
+### FUNCTIONALITY 4 ###
+
+
+### GET EDGE WITH HIGHEST BETWEENNESS CENTALITY - NEEDED FOR FUNCTIONALITY 5 ###
+def edge_to_remove(graph):
+    '''
+    input
+    graph: the graph data
+    
+    output
+    edge: edge with highest edge betweenness centrality score overall
+    '''
+    #the edge_betweenness_centrality works for both cases: directed and undirected graphs
+    G_dict = nx.edge_betweenness_centrality(graph)
+    edge = ()
+
+    # extract the edge with highest edge betweenness centrality score
+    for key, value in sorted(G_dict.items(), key=lambda item: item[1], reverse = True):
+        edge = key
+        break
+
+    return edge
+
+### GIRVAN-NEWMAN ALGORITHM - NEEDED FOR FUNCTIONALITY 5 ###
+def girvan_newman(graph):
+    '''
+    input
+    graph: the graph data
+    
+    output 
+    sg: list of the comunities after the edge removing process
+    min_num_edges: integer that is the number of edges we removed
+    '''
+    # find number of connected components in the two cases
+    graph_is_directed = graph.is_directed()
+    
+    min_num_edges = 0 #initialize the edge counter
+    if not graph_is_directed:
+        # Find all connected components in the graph
+        sg = nx.connected_components(graph)
+        sg_count = nx.number_connected_components(graph)
+        while(sg_count == 1):
+            graph.remove_edge(edge_to_remove(graph)[0], edge_to_remove(graph)[1])
+            min_num_edges+=1
+            sg = nx.connected_components(graph)
+            sg_count = nx.number_connected_components(graph)
+    else:
+        #If the graph is directed
+        #Connected components in weak form
+        #sg = nx.strongly_connected_components(graph)
+        #sg_count = nx.number_strongly_connected_components(graph)
+        sg = nx.weakly_connected_components(graph)
+        sg_count = nx.number_weakly_connected_components(graph)
+        while(sg_count == 1):
+            graph.remove_edge(edge_to_remove(graph)[0], edge_to_remove(graph)[1])
+            min_num_edges+=1
+            #sg = nx.strongly_connected_components(graph)
+            #sg_count = nx.number_strongly_connected_components(graph)
+            sg = nx.weakly_connected_components(graph)
+            sg_count = nx.number_weakly_connected_components(graph)
+    return sg,min_num_edges
+
+### FUNCTIONALITY 5 ###
+def funct_5(G,paper_1,paper_2,N):
+    '''
+    input
+    G: the graph data
+    paper_1, paper_2:  strings of paper_ids
+    N: numerosity of top authors by degree to consider
+    
+    output
+    k: float that is the minimum number of edges that should be removed to form communities
+    comunities: A list of communities, each containing a list of papers that belong to them.
+    are_in_same_com: boolean,that says whether the paper_1 and paper_2 belongs to the same community.
+    '''
+    
+    #Compute the subgraph of G induced by the top N nodes by degree
+    degrees = dict(G.degree())
+    sorted_nodes = [k for k, v in sorted(degrees.items(), key=lambda x: x[1], reverse = True)]
+    G = G.subgraph(sorted_nodes[:N])
+    
+    #Check if the nodes paper_1 and paper_2 are in the subgraph
+    if paper_1 not in G.nodes():
+        print(f"Error, paper {paper_1} is not in the subgraph induced by the top {N} papers.")
+        return 0,[],False  #technical output, not meaningful
+    elif paper_2 not in G.nodes():
+        print(f"Error, paper {paper_2} is not in the subgraph induced by the top {N} papers.")
+        return 0,[],False  #technical output, not meaningful
+    
+    
+    #Check if paper_1 and paper_2 are in the same connected component
+    #Otherwise the solution is trivial: min numb edges : 0, communities: connected components, are_in_same_com = False
+       
+    #We handle two different cases whether G is directed or not
+    #If G is undirected we'll use the simple notion of connection
+    #Otherwise we'll use the notion of weakly connection
+        
+    if not G.is_directed():
+        # Find all connected components in the graph
+        connected_components = list(nx.connected_components(G))
+    else:
+        #Connected components in weak form
+        #connected_components = list(nx.strongly_connected_components(G))
+        connected_components = list(nx.weakly_connected_components(G))
+            
+    # Check if paper_1 and paper_2 are in the same connected component
+    in_same_component = any(paper_1 in component and paper_2 in component for component in connected_components)
+
+    if not in_same_component:
+        print(f"Papers {paper_1} and {paper_2} are not in the same connected component.")
+        return 0,connected_components,False
+    else:
+        #In this case paper_1 and paper_2 are in the same connected component
+        #so the problem of detecting comunities is meaningful
+
+        #we apply the Girvan-Newman algorithm using a slightly different
+        #implementation found at https://www.analyticsvidhya.com/blog/2020/04/community-detection-graphs-networks/
+         
+        # find the nodes forming the communities
+        communities = []
+        num_links = 0
+        for component in connected_components:
+            if len(list(component)) > 1:
+                c,k = girvan_newman(G.subgraph(list(component)).copy())
+                num_links += k
+                for i in c:
+                    communities.append(list(i))
+
+        # find wheter paper_1 and paper_2 belong to the same comunity
+        are_in_same_com = any(paper_1 in comunity and paper_2 in comunity for comunity in communities)
+    return num_links,communities,are_in_same_com

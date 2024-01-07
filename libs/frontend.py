@@ -1,9 +1,11 @@
 from .backend import *
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
 import networkx as nx
 from IPython.display import display
+from itables import show
 
 ### FUNCTIONALITY 1 VISUALIZATION ###
 def visual_1(G,k):
@@ -164,7 +166,7 @@ def visual_id_finder(G,input_str):
     
     return None
 
-### FUNCTIONALITY 2 VISUALIZATION ### - WIP ADD COMMENTS
+### FUNCTIONALITY 2 VISUALIZATION ###
 def visual_2(G,v):
     '''
     Prints one table that displays four centrality measures calculated for an input node.
@@ -191,7 +193,7 @@ def visual_2(G,v):
         node_info = pd.DataFrame(np.array([[bet, pr, cc, dc[0], dc[1]]]), columns = colnames)
     else:
         G_name = 'collaboration'
-        # Calculate centrality measures
+        # Calculate centrality measures - Apply Functionality 2
         bet, pr, cc, dc = funct_2(G,str(v),G_name)
         # Create a dataframe to store the calculated measures
         colnames = ['Betweenness Centrality', 'PageRank Centrality', 'Closeness Centrality', 'Degree Centrality']
@@ -218,7 +220,7 @@ def visual_2(G,v):
     
     return None
 
-### FUNCTIONALITY 3 VISUALIZATION ### - WIP GRAPH PLOT
+### FUNCTIONALITY 3 VISUALIZATION ###
 def visual_3(G,a1,a,an,N):
     '''
     input
@@ -308,6 +310,138 @@ def visual_3(G,a1,a,an,N):
     
     return None
     
+### FUNCTIONALITY 4 VISUALIZATION ### - WIP
+def visual_4(G,authorA,authorB,N):
+    '''
+    input
+    G: the graph data
     
+    output
+    None
+    '''
+    # Split the original graph in two disconnected subgraphs, 
+    # one containing node A and the other containing node B 
+    # Apply Functionality 4
+    # HERE WE APPLY FUNCT 4
+    
+    # --- Print the number of links that should be disconnected ---
+    print(f'A total of {req_edges} edges need to be removed in order to split the graph in the two following disconnected sub-graphs')
+    
+    # --- Visualization on graph ---
+    #Compute the subgraph induced by the top N nodes by degree
+    degrees = dict(G.degree())
+    sorted_nodes = [k for k, v in sorted(degrees.items(), key=lambda x: x[1], reverse = True)]
+    G_sub = G.subgraph(sorted_nodes[:N])
+    
+    # Now, let's plot the induced sub-graph
+    # Initialize MatPlotLib figure
+    fig, axes = plt.subplots(nrows = 2, ncols = 1, figsize=(12, 10))
+    # Use spring layout
+    pos = nx.spring_layout(G_sub)
+    
+    # Plot the original graph
+    nx.draw_networkx(G_sub, pos = pos, with_labels = False, edge_color = 'gray', node_size = 30, ax = axes[0])
+    
+    axes[0].set_title("Citation sub-graph")
+    
+    # Let's plot the two disconnected sub-graphs
+    # NX DRAW NODES - DRAW ALL NODES
+    # NX DRAW EDGES - DRAW ALL EDGES EXCEPT THE REMOVED ONES
+    # ADD LABELS TO AUTHORA AND AUTHORB NODES
+    
+    return None
+
+
+### FUNCTIONALITY 5 VISUALIZATION ###
+def visual_5(G,paper_1,paper_2,N):
+    '''
+    input
+    G: the graph data
+    paper_1, paper_2:  strings of paper_ids
+    N: numerosity of top authors by degree to consider
+    
+    output
+    None
+    '''
+    # --- Communities in table ---
+    # Find the communities - Apply functionality 5
+    num_links, communities, are_in_same_comm = funct_5(G,paper_1,paper_2,N)
+    
+    # Stop if there are no communities (it means that one of the papers isn't in the induced subgraph)
+    if communities == []:
+        return None
+    
+    if num_links == 0:
+        print('There is no need to remove links to have the following communities')
+    else:
+        print(f'A total of {num_links} links need to be removed to have the following communities')
+    
+    print('\n\n\n')
+    
+    # Store communities in a dataframe
+    comm_df = pd.DataFrame(list(enumerate(communities)), columns = ['Community', 'Nodes'])
+    
+    # Change dataframe style to display prettier table
+    comm_df_stl = comm_df.style\
+    .set_caption('Citation Sub-Graph: List of Communities')\
+    .set_properties(**{'text-align':'center'})\
+    .set_table_styles([{
+    "selector": "tr", 
+    "props": "line-height: 30px;"
+     },{
+     'selector': 'caption',
+     'props': 'caption-side: top; font-size: 24px; text-align: center; color: black; font-weight: bold'
+     },{
+     'selector': 'th',
+     'props': 'font-size: 14px; text-align: center; line-height: inherit'
+     },{
+     'selector': 'td',
+     'props': 'font-size: 14px; line-height: inherit'
+     }], overwrite = False)\
+    .hide(axis = 'index')
+    
+    show(comm_df_stl, classes="display compact")
+    
+    # --- Visualization on graph ---
+    #Compute the subgraph induced by the top N nodes by degree
+    degrees = dict(G.degree())
+    sorted_nodes = [k for k, v in sorted(degrees.items(), key=lambda x: x[1], reverse = True)]
+    G_sub = G.subgraph(sorted_nodes[:N])
+    
+    # Now, let's plot the induced sub-graph
+    # Initialize MatPlotLib figure
+    fig, axes = plt.subplots(nrows = 2, ncols = 1, figsize=(12, 10))
+    # Use spring layout
+    pos = nx.spring_layout(G_sub)
+    
+    # Plot the original graph
+    nx.draw_networkx(G_sub, pos = pos, with_labels = False, edge_color = 'gray', node_size = 30, ax = axes[0])
+    
+    axes[0].set_title("Citation sub-graph")
+    
+    # Let's plot the same graph, with highlighted communities
+    # Draw the induced subgraph
+    nx.draw_networkx(G_sub, pos = pos, with_labels = False, edge_color = 'gray', node_size = 40, ax = axes[1])
+    # Re-draw the nodes with different colors (random) by belonging community
+    comm_cols = [tuple(np.random.choice(range(256), size=3)/256) for i in range(len(communities))]
+    for i,com in enumerate(communities):
+        if paper_1 in com:
+            paper_1_comm = i
+        if paper_2 in com:
+            paper_2_comm = i
+        nx.draw_networkx_nodes(G_sub, pos = pos, nodelist = G_sub.subgraph(com).nodes(), node_size = 40,node_color = comm_cols[i])
+    
+    # Setup legend to identify paper_1 and paper_2 communities
+    legend_elements = [
+    Line2D([0], [0], marker='o', color='gray', label=f'{paper_1} community',markerfacecolor=comm_cols[paper_1_comm], markersize=12),
+    Line2D([0], [0], marker='o', color='gray', label=f'{paper_2} community',markerfacecolor=comm_cols[paper_2_comm], markersize=12),        
+    ]
+    
+    axes[1].legend(handles=legend_elements, loc='lower right')
+    axes[1].set_title("Citation sub-graph with communities")
+    plt.tight_layout()
+    plt.show()
+    
+    return None
     
     
