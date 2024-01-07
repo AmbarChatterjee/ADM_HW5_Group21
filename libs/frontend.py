@@ -309,11 +309,14 @@ def visual_3(G,a1,a,an,N):
     
     return None
     
-### FUNCTIONALITY 4 VISUALIZATION ### - WIP
+### FUNCTIONALITY 4 VISUALIZATION ###
 def visual_4(G,authorA,authorB,N):
     '''
     input
     G: the graph data
+    authorA: the id of the first node which will be in the first sub-graph
+    authorB: the id of the second node which will be in the second sub-graph
+    N: numerosity of top authors by degree to consider
     
     output
     None
@@ -381,9 +384,6 @@ def visual_4(G,authorA,authorB,N):
     axis.set_xlim(left = xmin - 0.1*xrange, right = xmax + 0.1*xrange)
     axis.set_ylim(bottom = ymin - 0.1*yrange, top = ymax + 0.1*yrange)
     
-    # REMOVE EDGES 
-    # NX DRAW EDGES - DRAW ALL EDGES EXCEPT THE REMOVED ONES
-    # ADD LABELS TO AUTHORA AND AUTHORB NODES
     # Setup legend to identify paper_1 and paper_2 communities
     legend_elements = [
     Line2D([0], [0], marker='o', color='gray', label=f'{authorA} node',markerfacecolor='red', markersize=12),
