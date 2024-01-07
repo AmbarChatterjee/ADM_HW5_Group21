@@ -298,7 +298,6 @@ def visual_3(G,a1,a,an,N):
     ymin = min(yy for xx,yy in pos_path.values())
     ymax = max(yy for xx,yy in pos_path.values())
     yrange = ymax-ymin
-    plt.axis('off')
     axis = plt.gca()
     axis.set_xlim(left = xmin - 0.1*xrange, right = xmax + 0.1*xrange)
     axis.set_ylim(bottom = ymin - 0.1*yrange, top = ymax + 0.1*yrange)
@@ -321,11 +320,12 @@ def visual_4(G,authorA,authorB,N):
     '''
     # Split the original graph in two disconnected subgraphs, 
     # one containing node A and the other containing node B 
-    # Apply Functionality 4
-    # HERE WE APPLY FUNCT 4
+    # Apply Functionality 4 to do so
+    min_weight, partition, edge_cut_list = funct_4(G,authorA,authorB,N)
+    nedge_cut = len(edge_cut_list)
     
     # --- Print the number of links that should be disconnected ---
-    print(f'A total of {req_edges} edges need to be removed in order to split the graph in the two following disconnected sub-graphs')
+    print(f'A minimum of {nedge_cut} edges with an overall weight of {min_weight} need to be removed in order to split the graph in the two following (disconnected) sub-graphs')
     
     # --- Visualization on graph ---
     #Compute the subgraph induced by the top N nodes by degree
@@ -342,12 +342,58 @@ def visual_4(G,authorA,authorB,N):
     # Plot the original graph
     nx.draw_networkx(G_sub, pos = pos, with_labels = False, edge_color = 'gray', node_size = 30, ax = axes[0])
     
-    axes[0].set_title("Citation sub-graph")
+    axes[0].set_title("Collaboration sub-graph")
     
     # Let's plot the two disconnected sub-graphs
-    # NX DRAW NODES - DRAW ALL NODES
+    # Remove the cut edges from the original subgraph
+    G_sub_cut = G_sub.copy()
+    G_sub_cut.remove_edges_from(edge_cut_list)
+    # Highlight the authorA and authorB nodes
+    color_map = ['red' if node == authorA else '#00ff00' if node == authorB else '#1f78b4' for node in G_sub_cut] 
+    size_map = [90 if node == authorA or node == authorB else 30 for node in G_sub_cut]
+    # Draw the induced subgraph without the cut edges
+    pos = nx.spring_layout(G_sub_cut)
+    nx.draw_networkx(G_sub_cut, pos = pos, with_labels = False, edge_color = 'gray', node_color = color_map, node_size = size_map, ax = axes[1])
+    
+    # Check if authorA and authorB were originally in the same connected component
+    connected_components = list(nx.connected_components(G_sub))
+    in_same_component = any(authorA in component and authorB in component for component in connected_components)
+    
+    # Handle the visualization if they belonged to the same connected component or not
+    if in_same_component:
+        for i,comp in enumerate(connected_components):
+            if authorA in comp:
+                pos_path = {k:pos[k] for k in comp}
+    else:
+        pos_path = {}
+        for i,comp in enumerate(connected_components):
+            if (authorA in comp) or (authorB in comp):
+                pos_path.update({k:pos[k] for k in comp})
+    
+    # Zoom on the nodes of interest
+    xmin = min(xx for xx,yy in pos_path.values())
+    xmax = max(xx for xx,yy in pos_path.values())
+    xrange = xmax-xmin
+    ymin = min(yy for xx,yy in pos_path.values())
+    ymax = max(yy for xx,yy in pos_path.values())
+    yrange = ymax-ymin
+    axis = plt.gca()
+    axis.set_xlim(left = xmin - 0.1*xrange, right = xmax + 0.1*xrange)
+    axis.set_ylim(bottom = ymin - 0.1*yrange, top = ymax + 0.1*yrange)
+    
+    # REMOVE EDGES 
     # NX DRAW EDGES - DRAW ALL EDGES EXCEPT THE REMOVED ONES
     # ADD LABELS TO AUTHORA AND AUTHORB NODES
+    # Setup legend to identify paper_1 and paper_2 communities
+    legend_elements = [
+    Line2D([0], [0], marker='o', color='gray', label=f'{authorA} node',markerfacecolor='red', markersize=12),
+    Line2D([0], [0], marker='o', color='gray', label=f'{authorB} node',markerfacecolor='#00ff00', markersize=12),        
+    ]
+    
+    axes[1].legend(handles=legend_elements, loc='lower right')
+    axes[1].set_title("Partition of sub-graph after mincut")
+    plt.tight_layout()
+    plt.show()
     
     return None
 

@@ -264,6 +264,37 @@ def funct_3(G,a,a1,an,N):
     return path,papers
 
 ### FUNCTIONALITY 4 ###
+def funct_4(G,a,b,N):
+    '''
+    input
+    G: the graph data
+    a,b:  input nodes
+    N: numerosity of top authors by degree to consider
+    '''
+    #Compute the subgraph of G induced by the top N nodes by degree
+    degrees = dict(G.degree())
+    sorted_nodes = [k for k, v in sorted(degrees.items(), key=lambda x: x[1], reverse = True)]
+    G = G.subgraph(sorted_nodes[:N])
+    
+    #Check if the nodes are in the induced subgraph
+    if a not in G.nodes() or b not in G.nodes():
+        #Error
+        print(f"node {a} or {b} are not in the induced graph.")
+        return 0,[]  #technical output
+    else:
+        #Add the capacity label that is the inverse of the weight
+        for u, v, d in G.edges(data=True):
+        # Inverse of edge weight as capacity (higher weight -> lower capacity)
+            G[u][v]['capacity'] = 1 / d['weight']
+        
+        k,part = nx.minimum_cut(G,a,b)
+        
+        edge_cut_list = []
+        for p1_node in part[0]:
+            for p2_node in part[1]:
+                if G.has_edge(p1_node,p2_node):
+                    edge_cut_list.append((p1_node,p2_node)) 
+        return k,part,edge_cut_list
 
 
 ### GET EDGE WITH HIGHEST BETWEENNESS CENTALITY - NEEDED FOR FUNCTIONALITY 5 ###
@@ -331,7 +362,7 @@ def funct_5(G,paper_1,paper_2,N):
     input
     G: the graph data
     paper_1, paper_2:  strings of paper_ids
-    N: numerosity of top authors by degree to consider
+    N: numerosity of top papers by degree to consider
     
     output
     k: float that is the minimum number of edges that should be removed to form communities
