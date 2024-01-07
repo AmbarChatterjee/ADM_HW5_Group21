@@ -12,3 +12,6 @@ This repository contains the solutions for ADM-HW5. Here's an overview of the co
 - **main.ipynb:** This notebook includes all the answers to the homework questions.
 - **libs** This folder contains all the functions used in Q2.
 - **CommandLine.sh** This file contains the commands for the Command Line Question (CLQ)
+
+## Important notes
+We used the library IPyWidgets for the frontend part (visualizations). Since both github and nbviewer don’t show the widgets outputs, an html version of the notebook is accessible at this link (made with GitHub Pages): https://ambarchatterjee.github.io/ADM_HW5_Group21/ 
